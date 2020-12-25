@@ -13,13 +13,18 @@ if [ $# -lt 4 ]; then
   exit 1
 fi
 set -e
+set -x
+
+# find / -name libz.so.1
+
+echo "$LD_LIBRARY_PATH"
 
 COMMAND=$1
 ARCH=$2
 ANDROID_SDK_VERSION=$3
 WORKER_COUNT=$4
 WORKDIR=/node
-
+ARCH_BITS=64
 cd $WORKDIR
 
 if [ $ANDROID_SDK_VERSION -lt 23 ]; then
@@ -33,21 +38,25 @@ arm)
   DEST_CPU="arm"
   TOOLCHAIN_NAME="armv7a-linux-androideabi"
   ABI="armeabi-v7a"
+  ARCH_BITS=32
   ;;
 arm64 | aarch64)
   DEST_CPU="arm64"
   TOOLCHAIN_NAME="aarch64-linux-android"
   ARCH="arm64"
   ABI="arm64-v8a"
+  ARCH_BITS=64
   ;;
 x86)
   DEST_CPU="ia32"
   TOOLCHAIN_NAME="i686-linux-android"
   ABI="x86"
+  ARCH_BITS=32
   ;;
 x86_64)
   DEST_CPU="x64"
   TOOLCHAIN_NAME="x86_64-linux-android"
+  ARCH_BITS=64
   ARCH="x64"
   ABI="x86_64"
   ;;
@@ -111,11 +120,11 @@ configure)
     --with-intl=full-icu \
     --shared \
     --release-urlbase=https://github.com/dorajs/build_node
+  ;;
   # --without-intl \
   # --verbose \
   # --build-v8-with-gn \
   # --without-inspector \
-  ;;
 make)
   OUTPUT="/output/${ABI}"
   mkdir -p $OUTPUT

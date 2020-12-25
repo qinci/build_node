@@ -16,24 +16,27 @@ IMAGE_NAME=ndk20b
 ANDROID_SDK_VERSION=23
 WORKER_COUNT=8
 NODE_SOURCES=`dirname  $PWD`/node
+DOCKERFILE=./Dockerfile_64
 
-#case $ARCH in
-#arm)
-#  IMAGE_NAME=ndk20b_i386
-#  DOCKFILE=Dockerfile_i386
-#  ;;
-#*)
-#  IMAGE_NAME=ndk20b
-#  DOCKFILE=Dockerfile
-#  ;;
-#esac
+case $ARCH in
+arm)
+ IMAGE_NAME=ndk20b_i386
+ DOCKERFILE=./Dockerfile_i386
+ ;;
+*)
+ IMAGE_NAME=ndk20b_64
+ DOCKERFILE=./Dockerfile_64
+ ;;
+esac
 
 mkdir -p "$NODE_SOURCES"/output
 mkdir -p "$NODE_SOURCES"/out/"$ARCH"/
 
 case $COMMAND in
 configure)
-  docker -D build -t "$IMAGE_NAME" ./
+  # --platform linux/386
+  # buildx
+  docker -D build -t "$IMAGE_NAME" -f "$DOCKERFILE" .
 
   docker container run -it \
     --mount type=bind,source="$NODE_SOURCES",target=/node \
