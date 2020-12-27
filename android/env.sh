@@ -9,7 +9,7 @@
 # 'npm config set arch=<arch>'
 
 if [ $# -lt 4 ]; then
-  echo "$0 should have at least 4 parameters: target_arch, sdk_version, worker_count, command"
+  echo "$0 should have at least 4 parameters: command, target_arch, node_source_path, output_directory"
   exit 1
 fi
 set -e
@@ -21,9 +21,11 @@ echo "$LD_LIBRARY_PATH"
 
 COMMAND=$1
 ARCH=$2
-ANDROID_SDK_VERSION=$3
-WORKER_COUNT=$4
-WORKDIR=/node
+WORKDIR=$3
+OUTPUT=$4
+
+ANDROID_SDK_VERSION=23
+WORKER_COUNT=`nproc --all`
 ARCH_BITS=64
 cd $WORKDIR
 
@@ -57,7 +59,7 @@ x86_64)
   DEST_CPU="x64"
   TOOLCHAIN_NAME="x86_64-linux-android"
   ARCH_BITS=64
-  ARCH="x64"
+  ARCH="x64"ANDROID_NDK_HOME /opt/android-ndk
   ABI="x86_64"
   ;;
 *)
@@ -66,14 +68,12 @@ x86_64)
   ;;
 esac
 
-PREFIX="${WORKDIR}/out/prefix"
+PREFIX="${WORKDIR}/out/${ABI}"
 
 echo ARCH=${ARCH}
 echo ANDROID_SDK_VERSION=${ANDROID_SDK_VERSION}
 echo WORKER_COUNT=${WORKER_COUNT}
 echo PREFIX=${PREFIX}
-echo 'ls -la /output '
-ls -la /output
 
 HOST_OS="linux"
 HOST_ARCH="x86_64"
@@ -100,6 +100,8 @@ GYP_DEFINES+=" v8_target_arch=$ARCH"
 GYP_DEFINES+=" android_target_arch=$ARCH"
 GYP_DEFINES+=" host_os=$HOST_OS OS=android"
 export GYP_DEFINES
+
+printenv
 # rm -rf ${WORKDIR}/out
 case $COMMAND in
 configure)
@@ -117,7 +119,7 @@ configure)
     --without-report \
     --without-etw \
     --without-dtrace \
-    --with-intl=full-icu \
+    --with-intl=small-icu \
     --shared \
     --release-urlbase=https://github.com/dorajs/build_node
   ;;
@@ -126,15 +128,13 @@ configure)
   # --build-v8-with-gn \
   # --without-inspector \
 make)
-  OUTPUT="/output/${ABI}"
-  mkdir -p $OUTPUT
-  echo OUTPUT=${OUTPUT}
+  mkdir -p "$OUTPUT/${ABI}"
 
   make -j${WORKER_COUNT}
   make install
 
-  cp -r "$PREFIX/lib/libnode.so" "$OUTPUT"
-  cp -r "$PREFIX/include" "$OUTPUT"
+  cp -r "$PREFIX/lib/libnode.so" "$OUTPUT/${ABI}"
+  cp -r "$PREFIX/include" "$OUTPUT/${ABI}"
   ;;
 *)
   echo "Unsupported command provided: $COMMAND"

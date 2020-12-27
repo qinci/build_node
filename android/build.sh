@@ -13,8 +13,6 @@ ARCH=$2
 OUTPUT=$PWD/$3
 
 IMAGE_NAME=ndk20b
-ANDROID_SDK_VERSION=23
-WORKER_COUNT=8
 NODE_SOURCES=`dirname  $PWD`/node
 DOCKERFILE=./Dockerfile_64
 
@@ -41,7 +39,7 @@ configure)
   docker container run -it \
     --mount type=bind,source="$NODE_SOURCES",target=/node \
     --mount type=bind,source="$NODE_SOURCES"/out/"$ARCH"/,target=/node/out \
-    $IMAGE_NAME /env.sh configure "$ARCH" "$ANDROID_SDK_VERSION" "$WORKER_COUNT"
+    $IMAGE_NAME /env.sh configure "$ARCH" /node /output
   ;;
 make)
   mkdir -p "$OUTPUT"
@@ -50,7 +48,7 @@ make)
     --mount type=bind,source="$NODE_SOURCES",target=/node \
     --mount type=bind,source="$NODE_SOURCES"/out/"$ARCH"/,target=/node/out \
     --mount type=bind,source="$OUTPUT",target=/output \
-    $IMAGE_NAME /env.sh make "$ARCH" "$ANDROID_SDK_VERSION" "$WORKER_COUNT"
+    $IMAGE_NAME /env.sh make "$ARCH" /node /output
   ;;
 *)
   echo "Unsupported command provided: $COMMAND"
