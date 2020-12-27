@@ -75,8 +75,6 @@ echo ANDROID_SDK_VERSION=${ANDROID_SDK_VERSION}
 echo WORKER_COUNT=${WORKER_COUNT}
 echo PREFIX=${PREFIX}
 
-HOST_OS="linux"
-HOST_ARCH="x86_64"
 export CC_host=$(which gcc)
 export CXX_host=$(which g++)
 

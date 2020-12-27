@@ -31,3 +31,5 @@ RUN apt-get install python g++ gcc make gcc-multilib g++-multilib zlib1g-dev -y
 ADD ./env.sh /env.sh
 RUN mkdir -p /output
 ENV PATH ${PATH}:${ANDROID_NDK_HOME}
+ENV HOST_OS linux
+ENV HOST_ARCH x64
