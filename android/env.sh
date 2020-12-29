@@ -23,14 +23,6 @@ WORKDIR=$3
 OUTPUT=$4
 
 ANDROID_SDK_VERSION=23
-WORKER_COUNT=`nproc --all`
-HOST_ARCH=x86_64
-
-cd $WORKDIR
-
-if [ $ANDROID_SDK_VERSION -lt 23 ]; then
-  echo "$ANDROID_SDK_VERSION should equal or later than 23(Android 6.0)"
-fi
 
 CC_VER="4.9"
 
@@ -72,16 +64,37 @@ echo PREFIX=${PREFIX}
 export CC_host=$(which gcc)
 export CXX_host=$(which g++)
 
-host_gcc_version=$($CC_host --version | grep gcc | awk '{print $NF}')
-major=$(echo $host_gcc_version | awk -F . '{print $1}')
-minor=$(echo $host_gcc_version | awk -F . '{print $2}')
-if [ -z $major ] || [ -z $minor ] || [ $major -lt 6 ] || [ $major -eq 6 -a $minor -lt 3 ]; then
-  echo "host gcc $host_gcc_version is too old, need gcc 6.3.0"
-  exit 1
-fi
+
+# HOST_OS=`uname -s | tr "[:upper:]" "[:lower:]"`
 
 SUFFIX="$TOOLCHAIN_NAME$ANDROID_SDK_VERSION"
-TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$HOST_OS-$HOST_ARCH
+
+
+HOST_ARCH=`uname -m`
+HOST_OS=
+WORKER_COUNT=
+TOOLCHAIN=
+
+case `uname -s` in
+Linux) 
+  WORKER_COUNT=`nproc --all`
+  HOST_OS=linux
+  TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-$HOST_ARCH
+  host_gcc_version=$($CC_host --version | grep gcc | awk '{print $NF}')
+  major=$(echo $host_gcc_version | awk -F . '{print $1}')
+  minor=$(echo $host_gcc_version | awk -F . '{print $2}')
+  if [ -z $major ] || [ -z $minor ] || [ $major -lt 6 ] || [ $major -eq 6 -a $minor -lt 3 ]; then
+    echo "host gcc $host_gcc_version is too old, need gcc 6.3.0"
+    exit 1
+  fi
+  ;;
+Darwin)
+  WORKER_COUNT=`sysctl -n hw.ncpu`
+  HOST_OS=mac
+  TOOLCHAIN=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-$HOST_ARCH
+  ;;
+esac
+
 
 export PATH=$TOOLCHAIN/bin:$PATH
 export CC=$TOOLCHAIN/bin/$SUFFIX-clang
@@ -93,8 +106,9 @@ GYP_DEFINES+=" android_target_arch=$ARCH"
 GYP_DEFINES+=" host_os=$HOST_OS OS=android"
 export GYP_DEFINES
 
-printenv
-# rm -rf ${WORKDIR}/out
+
+cd $WORKDIR
+
 case $COMMAND in
 configure)
   make clean
